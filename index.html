@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>VoxGen Mobile - Natural Voice Generator</title>
+  <style>
+    :root {
+      --bg-color: #0d1117;
+      --card-bg: #161b22;
+      --accent-color: #238636;
+      --accent-hover: #2ea043;
+      --share-color: #1f6beb;
+      --share-hover: #388bfd;
+      --text-color: #c9d1d9;
+      --border-color: #30363d;
+      --muted-text: #8b949e;
+      --highlight-color: #58a6ff;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container, .guide-card {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      box-sizing: border-box;
+      margin-bottom: 16px;
+    }
+
+    h2, h3 {
+      margin-top: 0;
+      color: #ffffff;
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    .guide-card h3 {
+      font-size: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 8px;
+    }
+
+    label {
+      display: block;
+      margin-top: 14px;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    textarea, select, input[type="range"] {
+      width: 100%;
+      box-sizing: border-box;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 10px;
+      font-size: 1rem;
+    }
+
+    textarea {
+      height: 100px;
+      resize: vertical;
+    }
+
+    .controls-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      flex: 1;
+      padding: 12px;
+      font-size: 1rem;
+      font-weight: bold;
+      color: #ffffff;
+      background-color: var(--accent-color);
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: var(--accent-hover);
+    }
+
+    button.secondary {
+      background-color: #21262d;
+      border: 1px solid var(--border-color);
+    }
+
+    button.secondary:hover {
+      background-color: #30363d;
+    }
+
+    button.share-btn {
+      background-color: var(--share-color);
+    }
+
+    button.share-btn:hover {
+      background-color: var(--share-hover);
+    }
+
+    .section-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--muted-text);
+      margin-top: 12px;
+      margin-bottom: 4px;
+    }
+
+    .analysis-box {
+      background: var(--bg-color);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      color: var(--highlight-color);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .variation-list {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .variation-item {
+      background-color: var(--bg-color);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .term {
+      font-weight: 700;
+      color: var(--highlight-color);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>VoxGen TTS</h2>
+
+    <label for="text-input">Text to Speak</label>
+    <textarea id="text-input" placeholder="Type or paste text here..."></textarea>
+
+    <label for="voice-select">Select Voice & Accent</label>
+    <select id="voice-select">
+      <option value="">Loading voices...</option>
+    </select>
+
+    <label for="tone-select">Vocal Tone / Style Preset</label>
+    <select id="tone-select">
+      <option value="normal" selected>Normal / Neutral (Most Natural)</option>
+      <option value="falsetto">Falsetto (High Pitch & Speed)</option>
+      <option value="alto">Alto (Mid-Low Pitch)</option>
+      <option value="soprano">Soprano (Bright High Pitch)</option>
+      <option value="bass">Bass (Deep Pitch & Slow Speed)</option>
+    </select>
+
+    <div class="controls-row">
+      <div style="flex:1;">
+        <label for="rate">Speed: <span id="rate-val">1.0</span>x</label>
+        <input type="range" id="rate" min="0.5" max="2" value="1.0" step="0.1">
+      </div>
+      <div style="flex:1;">
+        <label for="pitch">Pitch: <span id="pitch-val">1.0</span></label>
+        <input type="range" id="pitch" min="0.5" max="2" value="1.0" step="0.1">
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <div class="btn-row">
+        <button id="speak-btn">Play Speech</button>
+        <button id="stop-btn" class="secondary">Stop</button>
+      </div>
+      <button id="share-btn" class="share-btn">Share Text Script</button>
+    </div>
+  </div>
+
+  <div class="guide-card">
+    <h3>Speech Phonetics & Emotional Analysis</h3>
+    
+    <div class="section-label">1. Word & Sentence Stress</div>
+    <div id="stress-box" class="analysis-box"></div>
+
+    <div class="section-label">2. Pitch Intonation Contour</div>
+    <div id="intonation-box" class="analysis-box"></div>
+
+    <div class="section-label">3. Coarticulation & Phonetic Flow</div>
+    <div id="coarticulation-box" class="analysis-box"></div>
+
+    <div class="section-label">4. Inferred Emotional Intent</div>
+    <div id="emotion-box" class="analysis-box"></div>
+  </div>
+
+  <div class="guide-card">
+    <h3>Characteristics of Human Voice Variation</h3>
+    <ul class="variation-list">
+      <li class="variation-item">
+        <span class="term">Vocal Fold Micro-Tremors:</span> Small, continuous fluctuations in pitch (jitter) and loudness (shimmer) caused by natural muscle tremors and variations in lung pressure.
+      </li>
+      <li class="variation-item">
+        <span class="term">Resonator Flexibility:</span> Instantaneous shifts in acoustic resonance as the throat, mouth, and nasal cavities continuously change shape during speech.
+      </li>
+      <li class="variation-item">
+        <span class="term">Emotional State &amp; Energy:</span> Subtle changes in voice quality, tension, and tempo driven by real-time feelings, physical fatigue, or excitement.
+      </li>
+      <li class="variation-item">
+        <span class="term">Physical Coarticulation:</span> Seamless overlapping of speech sounds driven by the physical momentum of moving lips, tongue, and jaw.
+      </li>
+      <li class="variation-item">
+        <span class="term">Involuntary Biological Noise:</span> Subtle extra sounds integrated into speech, such as breath intakes, lip smacks, and vocal fry.
+      </li>
+    </ul>
+  </div>
+
+  <script>
+    const synth = window.speechSynthesis;
+    const voiceSelect = document.getElementById('voice-select');
+    const toneSelect = document.getElementById('tone-select');
+    const textInput = document.getElementById('text-input');
+    const speakBtn = document.getElementById('speak-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    const shareBtn = document.getElementById('share-btn');
+    const rateInput = document.getElementById('rate');
+    const pitchInput = document.getElementById('pitch');
+    const rateVal = document.getElementById('rate-val');
+    const pitchVal = document.getElementById('pitch-val');
+    
+    const stressBox = document.getElementById('stress-box');
+    const intonationBox = document.getElementById('intonation-box');
+    const coarticulationBox = document.getElementById('coarticulation-box');
+    const emotionBox = document.getElementById('emotion-box');
+
+    let voices = [];
+
+    function populateVoiceList() {
+      if (typeof synth === 'undefined') return;
+      voices = synth.getVoices();
+
+      voiceSelect.innerHTML = '';
+      voices.forEach((voice, index) => {
+        const option = document.createElement('option');
+        const accent = voice.lang ? ` (${voice.lang})` : '';
+        option.textContent = `${voice.name}${accent}`;
+        option.value = index;
+        voiceSelect.appendChild(option);
+      });
+    }
+
+    populateVoiceList();
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+      speechSynthesis.onvoiceschanged = populateVoiceList;
+    }
+
+    const updateSliderDisplays = () => {
+      rateVal.textContent = parseFloat(rateInput.value).toFixed(1);
+      pitchVal.textContent = parseFloat(pitchInput.value).toFixed(1);
+    };
+
+    toneSelect.addEventListener('change', () => {
+      const presets = {
+        falsetto: [1.2, 1.8],
+        alto: [0.9, 0.8],
+        soprano: [1.0, 1.6],
+        bass: [0.8, 0.5],
+        normal: [1.0, 1.0]
+      };
+      const [rate, pitch] = presets[toneSelect.value] || presets.normal;
+      rateInput.value = rate;
+      pitchInput.value = pitch;
+      updateSliderDisplays();
+    });
+
+    rateInput.addEventListener('input', updateSliderDisplays);
+    pitchInput.addEventListener('input', updateSliderDisplays);
+
+    const unstressedWords = new Set([
+      'a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'so', 'yet',
+      'in', 'on', 'at', 'to', 'from', 'by', 'with', 'of', 'about',
+      'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them',
+      'my', 'your', 'his', 'its', 'our', 'their', 'this', 'that',
+      'is', 'am', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had',
+      'do', 'does', 'did', 'can', 'could', 'will', 'would'
+    ]);
+
+    function analyzeSpeech(text) {
+      if (!text.trim()) {
+        stressBox.textContent = "Enter text above...";
+        intonationBox.textContent = "Enter text above...";
+        coarticulationBox.textContent = "Enter text above...";
+        emotionBox.textContent = "Enter text above...";
+        return;
+      }
+
+      // 1. Stress Analysis
+      const sentences = text.split(/(?<=[.?!])\s+/);
+      let markedStress = sentences.map(sentence => {
+        return sentence.split(/\s+/).map(word => {
+          const clean = word.replace(/[^a-zA-Z]/g, '').toLowerCase();
+          return (clean.length > 0 && (!unstressedWords.has(clean) || clean.length > 5))
+            ? word.toUpperCase()
+            : word.toLowerCase();
+        }).join(" ");
+      }).join("\n");
+      stressBox.textContent = markedStress.trim();
+
+      // 2. Pitch Intonation Curves
+      let intonationGuide = sentences.filter(s => s.trim()).map(sentence => {
+        const trimmed = sentence.trim();
+        if (trimmed.includes("?")) return `[Rising Pitch ↗] "${trimmed}"`;
+        if (trimmed.includes("!")) return `[High Fall ↘] "${trimmed}"`;
+        return `[Falling Pitch ↘] "${trimmed}"`;
+      }).join("\n");
+      intonationBox.textContent = intonationGuide.trim();
+
+      // 3. Coarticulation & Connected Speech Transitions
+      const words = text.replace(/[^a-zA-Z\s]/g, '').split(/\s+/);
+      let flowLinks = [];
+      for (let i = 0; i < words.length - 1; i++) {
+        const curr = words[i].toLowerCase();
+        const next = words[i + 1].toLowerCase();
+        if (!curr || !next) continue;
+
+        const lastChar = curr.slice(-1);
+        const firstChar = next.slice(0, 1);
+
+        if (/[aeiou]/.test(lastChar) && /[aeiou]/.test(firstChar)) {
+          flowLinks.push(`${curr}_(w/y)_${next} (Glide Insertion)`);
+        } else if (!/[aeiou]/.test(lastChar) && /[aeiou]/.test(firstChar)) {
+          flowLinks.push(`${curr}‿${next} (Smooth C-V Link)`);
+        }
+      }
+      coarticulationBox.textContent = flowLinks.length > 0 ? flowLinks.join("\n") : "Standard word boundary pauses.";
+
+      // 4. Emotional Intent Detector
+      const lower = text.toLowerCase();
+      if (lower.includes("!") || lower.includes("great") || lower.includes("happy") || lower.includes("love")) {
+        emotionBox.textContent = "Enthusiastic / Warm (Bright Tone, Higher Pitch Dynamics)";
+      } else if (lower.includes("?") || lower.includes("how") || lower.includes("why") || lower.includes("what")) {
+        emotionBox.textContent = "Inquisitive / Engaging (Upward Terminal Pitch)";
+      } else if (lower.includes("sorry") || lower.includes("sad") || lower.includes("bad")) {
+        emotionBox.textContent = "Somber / Empathetic (Soft Cadence, Lowered Pitch)";
+      } else {
+        emotionBox.textContent = "Neutral / Informational (Balanced Pace & Resonance)";
+      }
+    }
+
+    textInput.addEventListener('input', (e) => analyzeSpeech(e.target.value));
+
+    speakBtn.addEventListener('click', () => {
+      if (synth.speaking) synth.cancel();
+      if (textInput.value.trim() === '') return;
+
+      const utterThis = new SpeechSynthesisUtterance(textInput.value);
+      const selectedIndex = voiceSelect.value;
+      if (selectedIndex !== '') utterThis.voice = voices[selectedIndex];
+
+      utterThis.rate = parseFloat(rateInput.value);
+      utterThis.pitch = parseFloat(pitchInput.value);
+
+      synth.speak(utterThis);
+    });
+
+    stopBtn.addEventListener('click', () => {
+      if (synth.speaking) synth.cancel();
+    });
+
+    shareBtn.addEventListener('click', async () => {
+      const text = textInput.value.trim();
+      if (!text) {
+        alert("Please enter some text first.");
+        return;
+      }
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'Speech Analysis Script',
+            text: `Text: "${text}"\n\nStress Pattern:\n${stressBox.textContent}`
+          });
+        } catch (err) {
+          console.log("Share canceled or failed.");
+        }
+      } else {
+        navigator.clipboard.writeText(text);
+        alert("Copied text to clipboard!");
+      }
+    });
+  </script>
+</body>
+</html>
